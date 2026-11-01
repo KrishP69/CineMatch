@@ -8,8 +8,10 @@ export default function MovieCarousel({
   movies = [],
   onSelectMovie,
   onWatchProviders,
-  watchlist,
+  watchlist = [],
   onToggleWatchlist,
+  watched = [],
+  onToggleWatched,
 }) {
   const scrollRef = useRef(null);
 
@@ -73,6 +75,8 @@ export default function MovieCarousel({
             onWatchProviders={onWatchProviders}
             inWatchlist={watchlist.some(m => m.id === movie.id)}
             onToggleWatchlist={onToggleWatchlist}
+            isWatched={watched.includes(movie.id)}
+            onToggleWatched={onToggleWatched}
             similarityScore={movie.similarity_score}
             recommendationReason={movie.recommendation_reason}
           />
@@ -82,3 +86,4 @@ export default function MovieCarousel({
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Film, Search, Bookmark, Compass, Sparkles, SlidersHorizontal, Globe, User } from 'lucide-react';
+import { Film, Search, Bookmark, Compass, Sparkles, SlidersHorizontal, Globe, Tv } from 'lucide-react';
 
 const COUNTRIES = [
   { code: 'IN', name: 'India', flag: '🇮🇳' },
@@ -17,9 +17,10 @@ export default function Navbar({
   country,
   setCountry,
   onOpenOnboarding,
+  user,
+  onOpenAuth,
 }) {
   const [showCountryMenu, setShowCountryMenu] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const selectedCountry = COUNTRIES.find(c => c.code === country) || COUNTRIES[0];
 
@@ -59,6 +60,18 @@ export default function Navbar({
               >
                 <Compass className="w-4 h-4 text-[#F04452]" />
                 Discover
+              </button>
+
+              <button
+                onClick={() => setActiveTab('series')}
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'series'
+                    ? 'bg-[#1e1e2a] text-white shadow-inner'
+                    : 'text-[#94a3b8] hover:text-white hover:bg-[#161620]'
+                }`}
+              >
+                <Tv className="w-4 h-4 text-[#6366f1]" />
+                Web Series
               </button>
 
               <button
@@ -168,47 +181,21 @@ export default function Navbar({
               )}
             </div>
 
-            {/* Profile / Preferences Trigger */}
+            {/* Profile / Login Trigger */}
             <div className="relative">
               <button
-                onClick={() => {
-                  setShowProfileMenu(!showProfileMenu);
-                  setShowCountryMenu(false);
-                }}
-                className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2b2b3c] to-[#3a3a52] flex items-center justify-center border border-[#404058] text-white hover:border-[#F04452] transition-colors cursor-pointer"
-                title="Your Profile & ML Taste Settings"
+                onClick={onOpenAuth}
+                className="flex items-center gap-2 px-3 py-1.8 rounded-xl bg-gradient-to-tr from-[#1e1e2c] to-[#2a2a3e] border border-[#3c3c54] text-white hover:border-[#F04452] transition-all cursor-pointer shadow-sm group"
+                title={user?.isLoggedIn ? `Profile: ${user.name}` : 'Sign In & Personalize'}
               >
-                <User className="w-4 h-4 text-[#e2e8f0]" />
+                <span className="text-base">{user?.avatar || '🍿'}</span>
+                <span className="text-xs font-bold text-white hidden sm:inline max-w-[90px] truncate">
+                  {user?.isLoggedIn ? user.name : 'Sign In'}
+                </span>
+                {!user?.isLoggedIn && (
+                  <span className="w-2 h-2 rounded-full bg-[#F04452] animate-ping" />
+                )}
               </button>
-
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[#181824] border border-[#2e2e40] shadow-2xl py-2 z-50">
-                  <div className="px-3.5 py-2 border-b border-[#282838] mb-1">
-                    <p className="text-xs font-semibold text-white">Movie Buff Profile</p>
-                    <p className="text-[11px] text-[#94a3b8]">Personalized with AI</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      onOpenOnboarding();
-                    }}
-                    className="w-full text-left px-3.5 py-2 text-xs text-[#e2e8f0] hover:bg-[#202030] flex items-center gap-2 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
-                    Retune AI Taste Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      setActiveTab('watchlist');
-                    }}
-                    className="w-full text-left px-3.5 py-2 text-xs text-[#e2e8f0] hover:bg-[#202030] flex items-center gap-2 cursor-pointer"
-                  >
-                    <Bookmark className="w-3.5 h-3.5 text-[#a855f7]" />
-                    View Watchlist ({watchlistCount})
-                  </button>
-                </div>
-              )}
             </div>
 
           </div>
@@ -224,6 +211,15 @@ export default function Navbar({
           >
             <Compass className="w-3.5 h-3.5" />
             Discover
+          </button>
+          <button
+            onClick={() => setActiveTab('series')}
+            className={`text-xs font-medium py-1 px-2 rounded-lg flex items-center gap-1.5 ${
+              activeTab === 'series' ? 'text-[#6366f1] bg-[#6366f1]/10 font-semibold' : 'text-[#94a3b8]'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            Series
           </button>
           <button
             onClick={() => setActiveTab('foryou')}
@@ -258,3 +254,4 @@ export default function Navbar({
     </nav>
   );
 }
+

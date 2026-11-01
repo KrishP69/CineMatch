@@ -156,27 +156,40 @@ class OTTService:
         try:
             url = f"https://api.themoviedb.org/3/movie/{tmdb_id}/watch/providers"
             headers = {"accept": "application/json"}
-            resp = requests.get(url, params={"api_key": self.tmdb_api_key}, headers=headers, timeout=4)
+            resp = requests.get(url, params={"api_key": self.tmdb_api_key}, headers=headers, timeout=2.0)
             if resp.status_code == 200:
                 payload = resp.json()
                 results = payload.get("results", {})
                 country_data = results.get(country.upper())
                 _PROVIDER_CACHE[cache_key] = (now, country_data)
                 return country_data
+            else:
+                _PROVIDER_CACHE[cache_key] = (now, None)
         except Exception as e:
             logger.warning(f"Error fetching TMDB watch providers for {tmdb_id}: {e}")
+            _PROVIDER_CACHE[cache_key] = (now, None)
 
         return None
 
-    def get_watch_providers(self, movie, country="IN"):
+    def get_watch_providers(self, movie, country="IN", title=None):
         """
         Retrieves accurate OTT availability for a given movie and country.
         Defaults to 'IN' (India).
         Returns structured lists for 'flatrate' (Subscription), 'rent', and 'buy'.
+        Supports movie as dict or integer (tmdb_id).
         """
+        if isinstance(movie, (int, str)):
+            tmdb_id = int(movie)
+            movie_title = title or f"Title {tmdb_id}"
+            movie = {"id": tmdb_id, "title": movie_title}
+        elif isinstance(movie, dict):
+            movie_title = movie.get("title") or movie.get("name") or title or "Movie"
+            tmdb_id = movie.get("id") or movie.get("tmdb_id")
+        else:
+            movie_title = title or "Movie"
+            tmdb_id = None
+
         country = (country or "IN").strip().upper()
-        movie_title = movie.get("title", "Movie")
-        tmdb_id = movie.get("id")
 
         enc_title = urllib.parse.quote_plus(str(movie_title))
         country_lower = country.lower()
@@ -267,6 +280,18 @@ class OTTService:
                     })
 
         has_data = bool(flatrate_list or rent_list or buy_list)
+        is_live = bool(tmdb_data is not None)
+        live_configured = bool(self.tmdb_api_key)
+
+        if is_live:
+            source_label = "TMDB Live Watch Providers"
+            status_message = "Live streaming availability verified via TMDB Watch Providers API."
+        elif not live_configured:
+            source_label = "Pre-indexed Catalogue (Offline)"
+            status_message = "Live OTT integration unavailable: TMDB_API_KEY is not configured in backend/.env. Displaying pre-indexed catalogue options."
+        else:
+            source_label = "TMDB Live (No Active Providers)"
+            status_message = f"No active streaming providers indexed for region {country} via TMDB. Explore direct platform search links below."
 
         # Fallback official search links for convenience
         fallback_search_links = [
@@ -281,14 +306,18 @@ class OTTService:
             "movie_title": movie_title,
             "country": country,
             "has_availability": has_data,
+            "is_live": is_live,
+            "live_configured": live_configured,
+            "source": source_label,
             "subscription": flatrate_list,
             "rent": rent_list,
             "buy": buy_list,
             "justwatch_url": justwatch_direct_url or justwatch_search_url,
             "fallback_search_links": fallback_search_links,
-            "message": "Live availability verified" if has_data else "Streaming availability not currently indexed for this region. Explore via official platform search links below."
+            "message": status_message
         }
 
 
 # Singleton instance
 ott_service = OTTService()
+

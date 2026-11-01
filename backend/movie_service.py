@@ -13,28 +13,46 @@ from recommender import recommender
 logger = logging.getLogger(__name__)
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "movies.json")
+EXPANDED_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "expanded_movies_catalog.json")
 
 
 class MovieService:
     def __init__(self):
         self.movies = []
+        self.curated_movies = []
         self.movies_dict = {}
         self.load_data()
 
     def load_data(self):
-        """Loads bundled JSON dataset and initializes ML recommender."""
+        """Loads curated dataset and expanded ML catalogue, then fits recommenders."""
         if not os.path.exists(DATA_PATH):
             logger.error(f"Movie dataset not found at {DATA_PATH}")
             return
 
         with open(DATA_PATH, "r", encoding="utf-8") as f:
-            self.movies = json.load(f)
+            self.curated_movies = json.load(f)
 
-        self.movies_dict = {int(m["id"]): m for m in self.movies}
-        
-        # Fit the TF-IDF and Cosine Similarity recommender engine
-        recommender.fit(self.movies)
-        logger.info(f"Loaded {len(self.movies)} movies into catalog.")
+        self.movies = list(self.curated_movies)
+        self.movies_dict = {int(m["id"]): m for m in self.curated_movies}
+
+        if os.path.exists(EXPANDED_PATH):
+            try:
+                with open(EXPANDED_PATH, "r", encoding="utf-8") as f:
+                    expanded = json.load(f)
+                added = 0
+                for em in expanded:
+                    eid = int(em["id"])
+                    if eid not in self.movies_dict:
+                        self.movies.append(em)
+                        self.movies_dict[eid] = em
+                        added += 1
+                logger.info(f"Loaded {added} expanded model-mapped movies into serving catalogue (total: {len(self.movies)}).")
+            except Exception as e:
+                logger.warning(f"Could not load expanded catalogue: {e}")
+
+        # Fit TF-IDF on curated movies
+        recommender.fit(self.curated_movies)
+        logger.info(f"Initialized catalog with {len(self.movies)} total movies ({len(self.curated_movies)} rich curated).")
 
     def get_movie_by_id(self, movie_id):
         """Fetches a single movie record with all metadata."""
@@ -193,32 +211,34 @@ class MovieService:
         if not hero and self.movies:
             hero = self.movies[0]
 
+        pool = self.curated_movies if self.curated_movies else self.movies
+
         # Trending Now: sorted by popularity
-        trending = sorted(self.movies, key=lambda m: float(m.get("popularity", 0)), reverse=True)[:14]
+        trending = sorted(pool, key=lambda m: float(m.get("popularity", 0)), reverse=True)[:14]
 
         # Top Rated: sorted by vote_average
-        top_rated = sorted(self.movies, key=lambda m: (float(m.get("vote_average", 0)), float(m.get("vote_count", 0))), reverse=True)[:14]
+        top_rated = sorted(pool, key=lambda m: (float(m.get("vote_average", 0)), float(m.get("vote_count", 0))), reverse=True)[:14]
 
         # Hidden Gems: vote_average >= 8.0, high ratings
-        hidden_gems = [m for m in self.movies if float(m.get("vote_average", 0)) >= 8.0]
+        hidden_gems = [m for m in pool if float(m.get("vote_average", 0)) >= 8.0]
         # sort by release year or distinct vibe
         hidden_gems.sort(key=lambda m: (m.get("release_year", 0), float(m.get("vote_average", 0))), reverse=True)
         hidden_gems = hidden_gems[4:18] if len(hidden_gems) > 10 else hidden_gems
 
         # Sci-Fi & Mind Benders
-        scifi = [m for m in self.movies if "Science Fiction" in m.get("genres", []) or "Mystery" in m.get("genres", [])][:14]
+        scifi = [m for m in pool if "Science Fiction" in m.get("genres", []) or "Mystery" in m.get("genres", [])][:14]
 
         # Action & Adrenaline
-        action = [m for m in self.movies if "Action" in m.get("genres", [])][:14]
+        action = [m for m in pool if "Action" in m.get("genres", [])][:14]
 
         # Indian Cinema Gems
-        indian = [m for m in self.movies if any(kw in ["india", "bihar", "pune", "maharashtra", "haryana", "mahishmati kingdom", "british raj"] for kw in m.get("keywords", [])) or m.get("director") in ["S.S. Rajamouli", "Rajkumar Hirani", "Anurag Kashyap", "Sriram Raghavan", "Nitesh Tiwari", "Rahi Anil Barve", "Aditya Chopra"]][:14]
+        indian = [m for m in pool if any(kw in ["india", "bihar", "pune", "maharashtra", "haryana", "mahishmati kingdom", "british raj"] for kw in m.get("keywords", [])) or m.get("director") in ["S.S. Rajamouli", "Rajkumar Hirani", "Anurag Kashyap", "Sriram Raghavan", "Nitesh Tiwari", "Rahi Anil Barve", "Aditya Chopra"]][:14]
 
         # Award Winning Drama
-        drama = [m for m in self.movies if "Drama" in m.get("genres", []) and float(m.get("vote_average", 0)) >= 8.1][:14]
+        drama = [m for m in pool if "Drama" in m.get("genres", []) and float(m.get("vote_average", 0)) >= 8.1][:14]
 
         # Animation & Family
-        animation = [m for m in self.movies if "Animation" in m.get("genres", [])][:14]
+        animation = [m for m in pool if "Animation" in m.get("genres", [])][:14]
 
         return {
             "hero": hero,
@@ -237,3 +257,4 @@ class MovieService:
 
 # Singleton instance
 movie_service = MovieService()
+

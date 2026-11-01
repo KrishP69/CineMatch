@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Bookmark, Eye, Trash2, Clock, Film, Sparkles, Tv, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bookmark, Eye, Trash2, Clock, Film, Sparkles, Tv, Check, Zap } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
+import { api } from '../services/api';
 
 export default function WatchlistPage({
   onSelectMovie,
@@ -14,10 +15,22 @@ export default function WatchlistPage({
     removeFromWatchlist,
     watched,
     toggleWatched,
+    removeFromWatched,
   } = watchlistState;
 
   const [activeTab, setActiveTab] = useState('watchlist'); // 'watchlist' or 'history'
   const [filterGenre, setFilterGenre] = useState('All');
+  const [catalogMovies, setCatalogMovies] = useState([]);
+
+  useEffect(() => {
+    api.getMovies({ per_page: 100 })
+      .then((res) => {
+        if (res.data?.movies) {
+          setCatalogMovies(res.data.movies);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Compute stats
   const totalRuntimeMin = watchlist.reduce((acc, m) => acc + (m.runtime || 120), 0);
@@ -29,9 +42,15 @@ export default function WatchlistPage({
     new Set(watchlist.flatMap(m => m.genres || []))
   );
 
+  // Combine watched from watchlist + catalog
+  const watchedMoviesList = [
+    ...watchlist.filter(m => watched.includes(m.id)),
+    ...catalogMovies.filter(m => watched.includes(m.id) && !watchlist.some(w => w.id === m.id)),
+  ];
+
   const displayedMovies = activeTab === 'watchlist'
     ? watchlist.filter(m => filterGenre === 'All' || (m.genres || []).includes(filterGenre))
-    : watchlist.filter(m => watched.includes(m.id));
+    : watchedMoviesList;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 animate-in fade-in duration-300">
@@ -41,27 +60,30 @@ export default function WatchlistPage({
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <Bookmark className="w-6 h-6 text-[#a855f7]" />
-            My Movie Library
+            My Movie Library & Watched History
           </h1>
           <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
-            Persistent across sessions via browser storage. Filter, track, and locate legal streaming options.
+            Track saved titles to watch, see movies you've already experienced, and feed continuous learning recommendations.
           </p>
         </div>
 
         {/* Stats Pill */}
-        {watchlist.length > 0 && (
-          <div className="flex items-center gap-3 bg-[#181824] px-4 py-2.5 rounded-2xl border border-[#2a2a3c]">
-            <div className="flex items-center gap-1.5 text-xs text-[#cbd5e1]">
-              <Film className="w-4 h-4 text-[#F04452]" />
-              <strong>{watchlist.length}</strong> Movies
-            </div>
-            <span className="text-[#3a3a52]">•</span>
-            <div className="flex items-center gap-1.5 text-xs text-[#cbd5e1]">
-              <Clock className="w-4 h-4 text-[#38bdf8]" />
-              <span>{totalHours}h {totalMin}m runtime</span>
-            </div>
+        <div className="flex items-center gap-3 bg-[#181824] px-4 py-2.5 rounded-2xl border border-[#2a2a3c]">
+          <div className="flex items-center gap-1.5 text-xs text-[#cbd5e1]">
+            <Bookmark className="w-4 h-4 text-[#a855f7]" />
+            <strong>{watchlist.length}</strong> To Watch
           </div>
-        )}
+          <span className="text-[#3a3a52]">•</span>
+          <div className="flex items-center gap-1.5 text-xs text-[#cbd5e1]">
+            <Eye className="w-4 h-4 text-[#3b82f6]" />
+            <strong>{watched.length}</strong> Watched
+          </div>
+          <span className="text-[#3a3a52]">•</span>
+          <div className="flex items-center gap-1.5 text-xs text-[#cbd5e1]">
+            <Clock className="w-4 h-4 text-[#38bdf8]" />
+            <span>{totalHours}h {totalMin}m</span>
+          </div>
+        </div>
       </div>
 
       {/* Tabs Switcher: Want to Watch vs Watched */}
@@ -87,7 +109,7 @@ export default function WatchlistPage({
           }`}
         >
           <Eye className="w-4 h-4 text-[#3b82f6]" />
-          <span>Watched History ({watchlist.filter(m => watched.includes(m.id)).length})</span>
+          <span>Already Watched ({watched.length})</span>
         </button>
 
         {/* Genre Filter if multiple genres in watchlist */}
@@ -108,6 +130,21 @@ export default function WatchlistPage({
         )}
       </div>
 
+      {/* Watched info callout */}
+      {activeTab === 'history' && (
+        <div className="mb-6 p-4 rounded-2xl bg-[#141424] border border-[#2a2a40] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#3b82f6]/20 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-[#3b82f6]" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white">Continuous Learning Negative Filtering Active</p>
+            <p className="text-[11px] text-[#94a3b8]">
+              Titles marked as Already Watched are automatically excluded from your recommendation pools while positively reinforcing your taste vector.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Movies Grid */}
       {displayedMovies.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
@@ -117,10 +154,12 @@ export default function WatchlistPage({
                 movie={movie}
                 onSelect={onSelectMovie}
                 onWatchProviders={onWatchProviders}
-                inWatchlist={true}
+                inWatchlist={watchlist.some(m => m.id === movie.id)}
                 onToggleWatchlist={toggleWatchlist}
+                isWatched={watched.includes(movie.id)}
+                onToggleWatched={toggleWatched}
               />
-              {/* Extra Watchlist Actions bar */}
+              {/* Extra Actions bar */}
               <div className="flex items-center justify-between pt-2 px-1 text-xs">
                 <button
                   onClick={() => toggleWatched(movie.id)}
@@ -132,13 +171,23 @@ export default function WatchlistPage({
                   <span>{watched.includes(movie.id) ? 'Watched' : 'Mark Seen'}</span>
                 </button>
 
-                <button
-                  onClick={() => removeFromWatchlist(movie.id)}
-                  className="text-[#ef4444]/80 hover:text-[#ef4444] transition-colors cursor-pointer p-1"
-                  title="Remove from Watchlist"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {activeTab === 'watchlist' ? (
+                  <button
+                    onClick={() => removeFromWatchlist(movie.id)}
+                    className="text-[#ef4444]/80 hover:text-[#ef4444] transition-colors cursor-pointer p-1"
+                    title="Remove from Watchlist"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => removeFromWatched(movie.id)}
+                    className="text-[#94a3b8] hover:text-[#ef4444] transition-colors cursor-pointer p-1"
+                    title="Unmark Watched"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -147,15 +196,19 @@ export default function WatchlistPage({
         /* Empty State */
         <div className="py-20 text-center bg-[#14141e] rounded-3xl border border-[#242434] p-8 max-w-lg mx-auto my-6">
           <div className="w-16 h-16 rounded-2xl bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center mx-auto mb-4">
-            <Bookmark className="w-8 h-8 text-[#a855f7]" />
+            {activeTab === 'watchlist' ? (
+              <Bookmark className="w-8 h-8 text-[#a855f7]" />
+            ) : (
+              <Eye className="w-8 h-8 text-[#3b82f6]" />
+            )}
           </div>
           <h3 className="text-lg font-bold text-white mb-2">
-            {activeTab === 'watchlist' ? 'Your Watchlist is Empty' : 'No Watched Films Yet'}
+            {activeTab === 'watchlist' ? 'Your Watchlist is Empty' : 'No Watched Films Marked Yet'}
           </h3>
           <p className="text-xs sm:text-sm text-[#94a3b8] max-w-sm mx-auto mb-6">
             {activeTab === 'watchlist'
               ? 'Save films you discover to track them and get instant notifications on where to watch them legally.'
-              : 'Mark films as seen from their details view or cards to improve your AI recommendation profile.'}
+              : 'Mark films as seen from movie cards while browsing to train your continuous learning recommendation profile.'}
           </p>
           <button
             onClick={onNavigateDiscover}

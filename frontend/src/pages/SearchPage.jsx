@@ -9,7 +9,7 @@ export default function SearchPage({
   onWatchProviders,
   watchlistState,
 }) {
-  const { watchlist, toggleWatchlist } = watchlistState;
+  const { watchlist, toggleWatchlist, watched, toggleWatched } = watchlistState;
   const [query, setQuery] = useState(initialQuery);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [minRating, setMinRating] = useState('');
@@ -190,6 +190,8 @@ export default function SearchPage({
               onWatchProviders={onWatchProviders}
               inWatchlist={watchlist.some(m => m.id === movie.id)}
               onToggleWatchlist={toggleWatchlist}
+              isWatched={watched.includes(movie.id)}
+              onToggleWatched={toggleWatched}
             />
           ))}
         </div>
@@ -218,3 +220,4 @@ export default function SearchPage({
     </div>
   );
 }
+

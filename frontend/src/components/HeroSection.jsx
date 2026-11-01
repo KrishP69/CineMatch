@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Plus, Check, Play, Info, Tv, Clock, Calendar } from 'lucide-react';
+import { Star, Plus, Check, Info, Tv, Clock, Calendar, Eye } from 'lucide-react';
 
 export default function HeroSection({
   movie,
@@ -7,6 +7,8 @@ export default function HeroSection({
   onWatchProviders,
   inWatchlist,
   onToggleWatchlist,
+  isWatched,
+  onToggleWatched,
 }) {
   if (!movie) {
     return (
@@ -14,10 +16,18 @@ export default function HeroSection({
     );
   }
 
-  const backdropUrl = movie.backdrop_path || movie.poster_path;
-  const rating = movie.vote_average ? Number(movie.vote_average).toFixed(1) : '8.5';
-  const year = movie.release_year || (movie.release_date ? movie.release_date.split('-')[0] : '2024');
-  const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : null;
+  const formatImg = (path) => {
+    if (!path) return 'https://image.tmdb.org/t/p/original/xJHokMbljvjADYdit5fK5VQsXEG.jpg';
+    if (path.startsWith('http')) return path;
+    const clean = path.startsWith('/') ? path : `/${path}`;
+    return `https://image.tmdb.org/t/p/original${clean}`;
+  };
+
+  const backdropUrl = formatImg(movie.backdrop_path || movie.poster_path);
+  const title = movie.title || movie.name || 'Featured Title';
+  const rating = movie.vote_average != null ? Number(movie.vote_average).toFixed(1) : (movie.tmdb_rating != null ? Number(movie.tmdb_rating).toFixed(1) : '8.5');
+  const year = movie.release_year || (movie.release_date ? movie.release_date.split('-')[0] : (movie.first_air_date ? movie.first_air_date.split('-')[0] : '2024'));
+  const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : (movie.number_of_seasons ? `${movie.number_of_seasons} Season${movie.number_of_seasons > 1 ? 's' : ''}` : null);
 
   return (
     <div className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden bg-[#14141c] border border-[#242434] shadow-2xl mb-10 group">
@@ -26,7 +36,7 @@ export default function HeroSection({
       <div className="absolute inset-0 z-0">
         <img
           src={backdropUrl}
-          alt={movie.title}
+          alt={title}
           className="w-full h-full object-cover object-center filter brightness-60 scale-100 group-hover:scale-102 transition-transform duration-1000 ease-out"
           onError={(e) => {
             e.currentTarget.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80';
@@ -67,7 +77,7 @@ export default function HeroSection({
 
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-2 drop-shadow-md">
-          {movie.title}
+          {title}
         </h1>
 
         {/* Tagline */}
@@ -118,6 +128,19 @@ export default function HeroSection({
             {inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
           </button>
 
+          {/* Already Watched */}
+          <button
+            onClick={() => onToggleWatched && onToggleWatched(movie.id)}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer hover:scale-103 active:scale-97 ${
+              isWatched
+                ? 'bg-[#3b82f6]/20 border-[#3b82f6]/60 text-[#60a5fa]'
+                : 'bg-[#1e1e2c]/90 hover:bg-[#28283c] border-[#36364c] text-white'
+            }`}
+          >
+            <Eye className={`w-4 h-4 ${isWatched ? 'text-[#60a5fa]' : 'text-[#94a3b8]'}`} />
+            {isWatched ? 'Already Watched' : 'Mark Watched'}
+          </button>
+
           {/* Where to Watch */}
           <button
             onClick={() => onWatchProviders(movie)}
@@ -132,3 +155,4 @@ export default function HeroSection({
     </div>
   );
 }
+

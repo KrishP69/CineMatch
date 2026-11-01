@@ -231,3 +231,4 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser (all `/a
 - **Data Attribution**: Movie posters, backdrops, and metadata are property of their respective copyright holders and indexed via TMDB.
 - **Authorized OTT Deep-Linking**: Streaming availability data links directly to official subscriber portals (Netflix, Prime Video, JioHotstar, Apple TV, ZEE5, SonyLIV) or legitimate index pages on JustWatch.
 - **No Piracy**: CineMatch strictly opposes copyright infringement and never links to unauthorized third-party streaming sites.
+

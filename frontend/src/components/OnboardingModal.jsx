@@ -12,10 +12,10 @@ const SEED_MOVIES = [
   { id: 155, title: 'The Dark Knight', year: 2008, poster: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg' },
   { id: 496243, title: 'Parasite', year: 2019, poster: 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg' },
   { id: 872585, title: 'Oppenheimer', year: 2023, poster: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg' },
-  { id: 579974, title: 'RRR', year: 2022, poster: 'https://image.tmdb.org/t/p/w500/wE0noFUq1q16nmnV8I5U0Jd4b9x.jpg' },
+  { id: 579974, title: 'RRR', year: 2022, poster: 'https://upload.wikimedia.org/wikipedia/en/d/d7/RRR_Poster.jpg' },
   { id: 324857, title: 'Spider-Verse', year: 2018, poster: 'https://image.tmdb.org/t/p/w500/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg' },
   { id: 438631, title: 'Dune', year: 2021, poster: 'https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg' },
-  { id: 313369, title: 'La La Land', year: 2016, poster: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkVJt0Rf0.jpg' },
+  { id: 313369, title: 'La La Land', year: 2016, poster: 'https://upload.wikimedia.org/wikipedia/en/a/ab/La_La_Land_%28film%29.png' },
 ];
 
 export default function OnboardingModal({
@@ -178,3 +178,4 @@ export default function OnboardingModal({
     </div>
   );
 }
+

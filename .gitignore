@@ -1,17 +1,37 @@
-# Node
+# Dependencies
 node_modules/
+frontend/node_modules/
+venv/
+.venv/
+venv_*/
+backend/venv*/
+
+# Production builds
 dist/
+frontend/dist/
 .vite/
 
-# Python
+# Python compiled
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.env
-venv/
-.venv/
+*.log
+.pytest_cache/
 
-# System / OS
+# Large training datasets & backups
+backend/data/movielens/
+backend/data/backups/
+backend/data/*backup*
+backend/data/*.pt
+*.pt
+
+# Sensitive environment variables
+.env
+backend/.env
+frontend/.env
+*.env.local
+
+# System & OS
 .DS_Store
 Thumbs.db
