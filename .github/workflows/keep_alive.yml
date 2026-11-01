@@ -1,0 +1,22 @@
+name: CineMatch 24x7 Keep-Alive Bot
+
+on:
+  schedule:
+    # Triggers every 12 minutes to prevent Render free tier from sleeping (sleeps at 15m)
+    - cron: '*/12 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping CineMatch Production Server
+        run: |
+          echo "Sending keep-alive heartbeat to CineMatch on Render..."
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://cinematch-e7sr.onrender.com/api/health)
+          echo "Render Health Endpoint Response: HTTP $STATUS_CODE"
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Success: Server is active, responsive, and awake! 🚀"
+          else
+            echo "Notice: Server response code was $STATUS_CODE."
+          fi
