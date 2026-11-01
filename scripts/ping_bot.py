@@ -24,3 +24,4 @@ if __name__ == "__main__":
     while True:
         ping()
         time.sleep(PING_INTERVAL_SECONDS)
+

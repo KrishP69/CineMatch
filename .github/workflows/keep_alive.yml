@@ -20,3 +20,4 @@ jobs:
           else
             echo "Notice: Server response code was $STATUS_CODE."
           fi
+
