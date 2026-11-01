@@ -679,7 +679,7 @@ def get_user_ratings_endpoint():
 @app.route("/api/discovery/recommend", methods=["POST"])
 def discovery_recommend():
     try:
-        body = request.get_json() or {}
+        body = request.get_json(force=True, silent=True) or {}
         genres = body.get("genres", [])
         moods = body.get("moods", [])
         themes = body.get("themes", [])

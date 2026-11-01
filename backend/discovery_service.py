@@ -119,35 +119,35 @@ class DiscoveryService:
             movie_genres = m.get("genres", [])
             if genres:
                 matched_genres = [g for g in genres if any(g.lower() == mg.lower() for mg in movie_genres)]
-                if matched_genres:
-                    genre_weight = len(matched_genres) / len(genres)
-                    score += genre_weight * 0.35
-                    matched_aspects.append(f"Genres ({', '.join(matched_genres)})")
-                else:
-                    score -= 0.15
+                if not matched_genres:
+                    continue
+                genre_weight = len(matched_genres) / len(genres)
+                score += genre_weight * 0.35
+                matched_aspects.append(f"Genres ({', '.join(matched_genres)})")
 
             # 2. Mood match via metadata soup & keywords
-            soup = (m.get("metadata_soup", "") + " " + m.get("overview", "")).lower()
-            if moods:
-                matched_moods = []
-                for mood in moods:
-                    keywords = MOOD_MAP.get(mood, [mood.lower()])
-                    if any(kw in soup for kw in keywords):
-                        matched_moods.append(mood)
-                if matched_moods:
-                    score += (len(matched_moods) / len(moods)) * 0.25
-                    matched_aspects.append(f"Mood ({', '.join(matched_moods)})")
+            if moods or themes:
+                soup = m.get("overview", "").lower()
+                if moods:
+                    matched_moods = []
+                    for mood in moods:
+                        keywords = MOOD_MAP.get(mood, [mood.lower()])
+                        if any(kw in soup for kw in keywords):
+                            matched_moods.append(mood)
+                    if matched_moods:
+                        score += (len(matched_moods) / len(moods)) * 0.25
+                        matched_aspects.append(f"Mood ({', '.join(matched_moods)})")
 
-            # 3. Theme / 'Feel like watching' match
-            if themes:
-                matched_themes = []
-                for theme in themes:
-                    keywords = THEME_MAP.get(theme, [theme.lower()])
-                    if any(kw in soup for kw in keywords):
-                        matched_themes.append(theme)
-                if matched_themes:
-                    score += (len(matched_themes) / len(themes)) * 0.25
-                    matched_aspects.append(f"Theme: {', '.join(matched_themes)}")
+                # 3. Theme / 'Feel like watching' match
+                if themes:
+                    matched_themes = []
+                    for theme in themes:
+                        keywords = THEME_MAP.get(theme, [theme.lower()])
+                        if any(kw in soup for kw in keywords):
+                            matched_themes.append(theme)
+                    if matched_themes:
+                        score += (len(matched_themes) / len(themes)) * 0.25
+                        matched_aspects.append(f"Theme: {', '.join(matched_themes)}")
 
             # 4. High ratings & popularity signal
             quality_boost = (vote_avg / 10.0) * 0.15
