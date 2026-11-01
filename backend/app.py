@@ -57,7 +57,7 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "app": "CineMatch API",
-        "version": "1.0.0",
+        "version": "1.0.1-perf",
         "movies_indexed": len(movie_service.movies),
         "recommender_ready": recommender.tfidf_matrix is not None,
         "neural_model_ready": neural_service.is_loaded,
