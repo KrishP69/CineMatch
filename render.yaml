@@ -5,7 +5,7 @@ services:
     region: singapore
     plan: free
     buildCommand: "cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt"
-    startCommand: "cd backend && gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT"
+    startCommand: "cd backend && gunicorn app:app --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
     envVars:
       - key: TMDB_API_KEY
         value: a07e22bc18f5cb106bfe4cc1f83ad8ed
@@ -13,3 +13,4 @@ services:
         value: cinematch_jwt_secret_e78b23c91df0482a567e912bc345def6
       - key: PYTHON_VERSION
         value: 3.11.9
+

@@ -168,29 +168,30 @@ class DiscoveryService:
             else:
                 reason = f"High-affinity match based on your preferences and quality ratings."
 
-            m_copy = dict(m)
-            m_copy["discovery_score"] = round(float(score), 4)
-            m_copy["similarity_score"] = round(display_match, 4)
-            m_copy["recommendation_reason"] = reason
-
-            candidates.append(m_copy)
+            candidates.append((m, round(float(score), 4), round(display_match, 4), reason))
 
         # Sorting
         if sort_by == "rating":
-            candidates.sort(key=lambda x: x.get("vote_average", 0), reverse=True)
+            candidates.sort(key=lambda x: x[0].get("vote_average", 0), reverse=True)
         elif sort_by == "release_date":
-            candidates.sort(key=lambda x: x.get("release_date", ""), reverse=True)
+            candidates.sort(key=lambda x: x[0].get("release_date", ""), reverse=True)
         elif sort_by == "popularity":
-            candidates.sort(key=lambda x: x.get("popularity", 0), reverse=True)
+            candidates.sort(key=lambda x: x[0].get("popularity", 0), reverse=True)
         else: # relevance
-            candidates.sort(key=lambda x: x["discovery_score"], reverse=True)
+            candidates.sort(key=lambda x: x[1], reverse=True)
 
         total_count = len(candidates)
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
-        paginated_results = candidates[start_idx:end_idx]
+        paginated_slice = candidates[start_idx:end_idx]
 
-        for m_res in paginated_results:
+        paginated_results = []
+        for m_item, score_val, display_match, reason in paginated_slice:
+            m_res = dict(m_item)
+            m_res["discovery_score"] = score_val
+            m_res["similarity_score"] = display_match
+            m_res["recommendation_reason"] = reason
+
             bundled_wp = m_res.get("watch_providers", {})
             in_bundle = bundled_wp.get("IN") if isinstance(bundled_wp, dict) else None
             if in_bundle:
@@ -209,6 +210,7 @@ class DiscoveryService:
                     "has_availability": False,
                     "source": "Catalogue Pre-indexed"
                 }
+            paginated_results.append(m_res)
 
         return {
             "total": total_count,
