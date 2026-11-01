@@ -41,7 +41,13 @@ else:
     logger.info("Running in API-only mode (frontend dist not found).")
 
 # Enable CORS for all routes (supports development & production)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    supports_credentials=True
+)
 
 
 @app.route("/api/health", methods=["GET"])

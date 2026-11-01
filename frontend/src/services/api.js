@@ -3,7 +3,10 @@
  * Connects to the Flask backend ML recommender, OTT service, Community, and Auth.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const rawBase = (import.meta.env.VITE_API_URL || '').trim();
+const API_BASE = rawBase
+  ? (rawBase.endsWith('/api') ? rawBase : `${rawBase.replace(/\/+$/, '')}/api`)
+  : '/api';
 
 export function getAuthToken() {
   return localStorage.getItem('cinematch_token');
